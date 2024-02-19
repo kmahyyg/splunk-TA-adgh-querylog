@@ -3,6 +3,7 @@ package main
 import (
 	"adgh-querylog-preprocessor/ext"
 	"bufio"
+	"encoding/json"
 	"log"
 	"net"
 	"os"
@@ -53,33 +54,37 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	err = dstConn.SetKeepAlive(true)
-	if err != nil {
-		panic(err)
-	}
 	_ = dstConn.Close()
 	log.Println("TCP Connection can be established.")
 	log.Println("Prestart check complete.")
 	// others
 	var lastTS time.Time
+	//TODO: read if progress exists
 	var lastTSChan = make(chan time.Time, 1)
 	go func() {
 		log.Println("Start Last-Fetch Timestamp Saver.")
-		// last timestamp saver
+		lastSaveTime := time.Now()
 		for {
+			// last timestamp saver
+			currentTime := time.Now()
 			i, isLast := <-lastTSChan
 			lastTS = i
-			if isLast {
-				log.Println("LastTSChan closed.")
+			// periodically save
+			if isLast || currentTime.Sub(lastSaveTime) > 300*time.Second {
 				savedTS, _ := lastTS.MarshalBinary()
-				_ = os.WriteFile(RECOVERY_FROM_PATH, savedTS, 0644)
-				log.Println("Last Progress saved, progress: ", lastTS.String())
+				err := os.WriteFile(RECOVERY_FROM_PATH, savedTS, 0644)
+				log.Println("Last Progress save action triggered, progress: ", lastTS.String())
+				if err != nil {
+					log.Println("Save progress error: " + err.Error())
+				}
+				lastSaveTime = currentTime
 			}
 		}
 	}()
 	// buffer 100 lines
-	var logDataChan = make(chan string, 100)
+	var logDataChan = make(chan *ext.ADGHLogEntry, 100)
 	go func() {
+		//todo: maybe github.com/nxadm/tail
 		file, err := os.Open(conf.SourceFile)
 		if err != nil {
 			panic(err)
@@ -89,13 +94,19 @@ func main() {
 		lscanner.Split(bufio.ScanLines)
 		log.Println("Start File Reader.")
 		for lscanner.Scan() {
-			curLine := lscanner.Text()
-			logDataChan <- curLine
+			curLine := lscanner.Bytes()
+			buf := &ext.ADGHLogEntry{}
+			err := json.Unmarshal(curLine, buf)
+			if err != nil {
+				log.Println("Unmarshal Error: ", err.Error())
+			}
+			logDataChan <- buf
+			lastTSChan <- buf.Time
 		}
 	}()
 	go func() {
 		// tcp conn and duplicator and processor and data sender
-		//TODO: always retry connection, parse log, extend log, send timestamp to lastTS, send final log to splunk
+		//TODO: always retry connection, for each object, parse log, remove answer, extend log, send final log to splunk
 
 	}()
 	var sigChan = make(chan os.Signal, 1)
