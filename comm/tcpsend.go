@@ -29,37 +29,41 @@ func (tc *TCPClient) SetDest(dest string) {
 }
 
 func (tc *TCPClient) Connect() error {
+	estabTcpConn := func() error {
+		dstAddr, err2 := net.ResolveTCPAddr("tcp", tc.dest)
+		if err2 != nil {
+			return err2
+		}
+		tc.mu.Lock()
+		tc.conn, err2 = net.DialTCP("tcp", nil, dstAddr)
+		tc.mu.Unlock()
+		return err2
+	}
 	if tc.dest == "" {
 		return ErrDestNotSet
 	}
 	if tc.conn != nil {
 		_, err := tc.conn.Write([]byte{0x00})
 		if err != nil {
-			dstAddr, err2 := net.ResolveTCPAddr("tcp", tc.dest)
-			if err2 != nil {
-				return err2
-			}
 			retryCounter := 0
 			retrySleeper, err2 := time.ParseDuration("3s")
 			if err != nil {
 				return err2
 			}
-			tc.mu.Lock()
-			tc.conn, err2 = net.DialTCP("tcp", nil, dstAddr)
-			tc.mu.Unlock()
 			for err2 != nil || retryCounter >= 3 {
 				retryCounter += 1
 				time.Sleep(retrySleeper)
 				retrySleeper *= 2
-				tc.mu.Lock()
-				tc.conn, err2 = net.DialTCP("tcp", nil, dstAddr)
-				tc.mu.Unlock()
+				err2 = estabTcpConn()
 				if err2 == nil {
 					return nil
 				}
 			}
 			return ErrTooManyConnError
 		}
+	} else {
+		err2 := estabTcpConn()
+		return err2
 	}
 	return nil
 }
