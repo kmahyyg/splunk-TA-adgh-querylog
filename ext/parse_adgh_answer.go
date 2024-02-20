@@ -15,6 +15,7 @@ var (
 func ParseAnswerInLog(e *ADGHLogEntry) (int, error) {
 	if e.Result.IsFiltered {
 		e.ParsedAnswer = []string{"filtered"}
+		e.ResultStr = e.Result.Reason.String()
 		return 1, nil
 	}
 	dnsResp := dns.Msg{}

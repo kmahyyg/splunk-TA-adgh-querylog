@@ -67,6 +67,8 @@ type ADGHLogEntry struct {
 	IP net.IP `json:"IP"`
 
 	Result ADGHFilteringResult
+	// Customized Field
+	ResultStr string `json:",omitempty"`
 
 	Elapsed time.Duration
 
