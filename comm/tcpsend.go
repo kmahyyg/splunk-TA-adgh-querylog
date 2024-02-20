@@ -73,5 +73,6 @@ func (tc *TCPClient) Write(data []byte) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	return tc.conn.Write(data)
+	fData := append(data, '\n')
+	return tc.conn.Write(fData)
 }

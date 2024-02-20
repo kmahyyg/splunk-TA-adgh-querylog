@@ -70,8 +70,6 @@ func main() {
 		if err != nil {
 			log.Println("Error: cannot read last saved progress file: ", err.Error())
 		}
-	} else {
-		lastTS = time.Now()
 	}
 	// start check
 	var lastTSChan = make(chan time.Time, 1)
@@ -82,20 +80,24 @@ func main() {
 		for {
 			// last timestamp saver
 			currentTime := time.Now()
-			i, isLast := <-lastTSChan
-			lastTS = i
+			i, hasNext := <-lastTSChan
+			if hasNext {
+				lastTS = i
+			}
 			fetchedCounter += 1
 			// periodically save
-			if isLast || currentTime.Sub(lastTS) > 300*time.Second || fetchedCounter > 100 {
+			if !hasNext || currentTime.Sub(lastTS) > 300*time.Second || fetchedCounter > 100 {
 				savedTS, _ := lastTS.MarshalBinary()
 				err := os.WriteFile(RECOVERY_FROM_PATH, savedTS, 0644)
 				log.Println("Last Progress save action triggered, progress: ", lastTS.String())
 				if err != nil {
 					log.Println("Save progress error: " + err.Error())
 				}
-				lastTS = currentTime
 				if fetchedCounter > 100 {
 					fetchedCounter = 0
+				}
+				if !hasNext {
+					break
 				}
 			}
 		}
@@ -119,9 +121,13 @@ func main() {
 			if err != nil {
 				log.Println("Unmarshal Error: ", err.Error())
 			}
-			if buf.Time.Sub(lastTS) <= 0 {
+			log.Println("Read one line of Logs.")
+			if buf.Time.Sub(lastTS) >= 0 {
 				logDataChan <- buf
+				//log.Printf("Written to LogDataChan: %v \n", buf)
 				lastTSChan <- buf.Time
+			} else {
+				log.Println("Current Log has been skipped after unmarshal.")
 			}
 		}
 	}()
@@ -135,7 +141,12 @@ func main() {
 			panic(err)
 		}
 		for {
-			log2Write := <-logDataChan
+			log2Write, hasNext := <-logDataChan
+			log.Printf("Read From LogDataChan: %v \n", log2Write)
+			if !hasNext {
+				log.Println("logDataChan closed.")
+				break
+			}
 			n, err := ext.ParseAnswerInLog(log2Write)
 			if err != nil {
 				log.Println("Log Parser Error: ", err.Error())
@@ -151,6 +162,7 @@ func main() {
 			if err != nil {
 				log.Println("Marshal Log Error: ", err.Error())
 			}
+			//log.Println("Write To TCP: ", fdata)
 			_, err = tcpConnCli.Write(fdata)
 			if err != nil {
 				log.Println("Write To TCP Error: ", err.Error())
