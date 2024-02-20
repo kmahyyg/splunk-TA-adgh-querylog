@@ -18,8 +18,8 @@ which is difficult to search or extraction on Splunk.
 
 Configuration was set via environment variable and will be saved to `/etc/adgh-log-preproc/default`: 
 ```
-DEST_TCP="10.77.1.233:12253"
-SRC_LOG="/usr/local/adgh/data/querylog.json"
+DEST_TCP=10.77.1.233:12253
+SRC_LOG=/usr/local/adgh/data/querylog.json
 ```
 
 Progress recover file will be saved in `/etc/adgh-log-preproc/.recover.prog`.
