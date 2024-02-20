@@ -127,7 +127,6 @@ func main() {
 			if buf.Time.Sub(lastTS) >= 0 {
 				logDataChan <- buf
 				//log.Printf("Written to LogDataChan: %v \n", buf)
-				lastTSChan <- buf.Time
 			} else {
 				log.Println("Current Log has been skipped after unmarshal.")
 			}
@@ -169,6 +168,7 @@ func main() {
 			if err != nil {
 				log.Println("Write To TCP Error: ", err.Error())
 			}
+			lastTSChan <- log2Write.Time
 		}
 	}()
 	var sigChan = make(chan os.Signal, 1)
