@@ -1,6 +1,7 @@
 package main
 
 import (
+	"adgh-querylog-preprocessor/comm"
 	"adgh-querylog-preprocessor/ext"
 	"bufio"
 	"encoding/json"
@@ -59,32 +60,50 @@ func main() {
 	log.Println("Prestart check complete.")
 	// others
 	var lastTS time.Time
-	//TODO: read if progress exists
+	// read if progress exists
+	if finfo, err := os.Stat(RECOVERY_FROM_PATH); err == nil && !finfo.IsDir() {
+		lastSavedTSData, err := os.ReadFile(RECOVERY_FROM_PATH)
+		if err != nil {
+			log.Println("Error: cannot read last saved progress file: ", err.Error())
+		}
+		err = lastTS.UnmarshalBinary(lastSavedTSData)
+		if err != nil {
+			log.Println("Error: cannot read last saved progress file: ", err.Error())
+		}
+	} else {
+		lastTS = time.Now()
+	}
+	// start check
 	var lastTSChan = make(chan time.Time, 1)
 	go func() {
 		log.Println("Start Last-Fetch Timestamp Saver.")
-		lastSaveTime := time.Now()
+		time.Sleep(2 * time.Second)
+		fetchedCounter := 0
 		for {
 			// last timestamp saver
 			currentTime := time.Now()
 			i, isLast := <-lastTSChan
 			lastTS = i
+			fetchedCounter += 1
 			// periodically save
-			if isLast || currentTime.Sub(lastSaveTime) > 300*time.Second {
+			if isLast || currentTime.Sub(lastTS) > 300*time.Second || fetchedCounter > 100 {
 				savedTS, _ := lastTS.MarshalBinary()
 				err := os.WriteFile(RECOVERY_FROM_PATH, savedTS, 0644)
 				log.Println("Last Progress save action triggered, progress: ", lastTS.String())
 				if err != nil {
 					log.Println("Save progress error: " + err.Error())
 				}
-				lastSaveTime = currentTime
+				lastTS = currentTime
+				if fetchedCounter > 100 {
+					fetchedCounter = 0
+				}
 			}
 		}
 	}()
 	// buffer 100 lines
 	var logDataChan = make(chan *ext.ADGHLogEntry, 100)
 	go func() {
-		//todo: maybe github.com/nxadm/tail
+		// maybe github.com/nxadm/tail
 		file, err := os.Open(conf.SourceFile)
 		if err != nil {
 			panic(err)
@@ -100,14 +119,43 @@ func main() {
 			if err != nil {
 				log.Println("Unmarshal Error: ", err.Error())
 			}
-			logDataChan <- buf
-			lastTSChan <- buf.Time
+			if buf.Time.Sub(lastTS) <= 0 {
+				logDataChan <- buf
+				lastTSChan <- buf.Time
+			}
 		}
 	}()
+	tcpConnCli := &comm.TCPClient{}
+	tcpConnCli.SetDest(conf.DestinationTcp)
 	go func() {
 		// tcp conn and duplicator and processor and data sender
-		//TODO: always retry connection, for each object, parse log, remove answer, extend log, send final log to splunk
-
+		// always retry connection, for each object, parse log, remove answer, extend log, send final log to splunk
+		err := tcpConnCli.Connect()
+		if err != nil {
+			panic(err)
+		}
+		for {
+			log2Write := <-logDataChan
+			n, err := ext.ParseAnswerInLog(log2Write)
+			if err != nil {
+				log.Println("Log Parser Error: ", err.Error())
+			}
+			if n >= 0 {
+				err = ext.RemoveAnswerInLog(log2Write)
+				if err != nil {
+					log.Println("Log Filter Error: ", err.Error())
+				}
+			}
+			// write to splunk
+			fdata, err := json.Marshal(log2Write)
+			if err != nil {
+				log.Println("Marshal Log Error: ", err.Error())
+			}
+			_, err = tcpConnCli.Write(fdata)
+			if err != nil {
+				log.Println("Write To TCP Error: ", err.Error())
+			}
+		}
 	}()
 	var sigChan = make(chan os.Signal, 1)
 	defer close(sigChan)
