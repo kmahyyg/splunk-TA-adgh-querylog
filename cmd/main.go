@@ -3,8 +3,8 @@ package main
 import (
 	"adgh-querylog-preprocessor/comm"
 	"adgh-querylog-preprocessor/ext"
-	"bufio"
 	"encoding/json"
+	"github.com/nxadm/tail"
 	"log"
 	"net"
 	"os"
@@ -105,17 +105,19 @@ func main() {
 	// buffer 100 lines
 	var logDataChan = make(chan *ext.ADGHLogEntry, 100)
 	go func() {
-		// maybe github.com/nxadm/tail
-		file, err := os.Open(conf.SourceFile)
+		file, err := tail.TailFile(conf.SourceFile, tail.Config{
+			ReOpen:        true,
+			MustExist:     true,
+			Follow:        true,
+			CompleteLines: true,
+		})
 		if err != nil {
 			panic(err)
 		}
-		defer file.Close()
-		lscanner := bufio.NewScanner(file)
-		lscanner.Split(bufio.ScanLines)
-		log.Println("Start File Reader.")
-		for lscanner.Scan() {
-			curLine := lscanner.Bytes()
+		defer file.Cleanup()
+		defer file.Stop()
+		for line := range file.Lines {
+			curLine := []byte(line.Text)
 			buf := &ext.ADGHLogEntry{}
 			err := json.Unmarshal(curLine, buf)
 			if err != nil {
