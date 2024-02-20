@@ -1,0 +1,16 @@
+[Unit]
+Description=AdGuard Home Query Log Preprocesser
+ConditionFileIsExecutable=/usr/local/adgh/adgh_qlog_preproc.elf
+After=syslog.target network-online.target
+Before=AdGuardHome.service
+
+[Service]
+ExecStartPre=/bin/mkdir -p /etc/adgh-log-preproc
+ExecStart=/usr/local/adgh/adgh_qlog_preproc.elf
+WorkingDirectory=/etc/adgh-log-preproc
+Restart=always
+RestartSec=10
+EnvironmentFile=/etc/adgh-log-preproc/default
+
+[Install]
+WantedBy=multi-user.target
