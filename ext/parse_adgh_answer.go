@@ -13,6 +13,10 @@ var (
 )
 
 func ParseAnswerInLog(e *ADGHLogEntry) (int, error) {
+	if e.Result.IsFiltered {
+		e.ParsedAnswer = []string{"filtered"}
+		return 1, nil
+	}
 	dnsResp := dns.Msg{}
 	err := dnsResp.Unpack(e.Answer)
 	if err != nil {

@@ -144,7 +144,7 @@ func main() {
 		}
 		for {
 			log2Write, hasNext := <-logDataChan
-			log.Printf("Read From LogDataChan: %v \n", log2Write)
+			//log.Printf("Read From LogDataChan: %v \n", log2Write)
 			if !hasNext {
 				log.Println("logDataChan closed.")
 				break

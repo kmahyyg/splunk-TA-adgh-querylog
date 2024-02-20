@@ -29,21 +29,11 @@ func (tc *TCPClient) SetDest(dest string) {
 }
 
 func (tc *TCPClient) Connect() error {
-	estabTcpConn := func() error {
-		dstAddr, err2 := net.ResolveTCPAddr("tcp", tc.dest)
-		if err2 != nil {
-			return err2
-		}
-		tc.mu.Lock()
-		tc.conn, err2 = net.DialTCP("tcp", nil, dstAddr)
-		tc.mu.Unlock()
-		return err2
-	}
 	if tc.dest == "" {
 		return ErrDestNotSet
 	}
-	if tc.conn != nil {
-		_, err := tc.conn.Write([]byte{0x00})
+	if tc.conn == nil {
+		err := tc.establishTcpConn()
 		if err != nil {
 			retryCounter := 0
 			retrySleeper, err2 := time.ParseDuration("3s")
@@ -54,7 +44,7 @@ func (tc *TCPClient) Connect() error {
 				retryCounter += 1
 				time.Sleep(retrySleeper)
 				retrySleeper *= 2
-				err2 = estabTcpConn()
+				err2 = tc.establishTcpConn()
 				if err2 == nil {
 					return nil
 				}
@@ -62,17 +52,44 @@ func (tc *TCPClient) Connect() error {
 			return ErrTooManyConnError
 		}
 	} else {
-		err2 := estabTcpConn()
-		return err2
+		return nil
 	}
 	return nil
 }
 
-func (tc *TCPClient) Write(data []byte) (int, error) {
-	err := tc.Connect()
-	if err != nil {
-		return -1, err
+func (tc *TCPClient) establishTcpConn() error {
+	dstAddr, err2 := net.ResolveTCPAddr("tcp", tc.dest)
+	if err2 != nil {
+		return err2
 	}
+	tc.mu.Lock()
+	tc.conn, err2 = net.DialTCP("tcp", nil, dstAddr)
+	tc.mu.Unlock()
+	return err2
+}
+
+func (tc *TCPClient) Write(data []byte) (int, error) {
 	fData := append(data, '\n')
-	return tc.conn.Write(fData)
+	wr, err2 := tc.conn.Write(fData)
+	if err2 != nil {
+		retryCounter := 0
+		retrySleeper, err3 := time.ParseDuration("3s")
+		if err3 != nil {
+			return -1, err3
+		}
+		for err2 != nil {
+			if retryCounter <= 9 {
+				retryCounter += 1
+				time.Sleep(retrySleeper)
+				retrySleeper *= 2
+				err2 = tc.establishTcpConn()
+				if err2 == nil {
+					wr, err2 = tc.conn.Write(fData)
+				}
+			} else {
+				return -1, ErrTooManyConnError
+			}
+		}
+	}
+	return wr, err2
 }
