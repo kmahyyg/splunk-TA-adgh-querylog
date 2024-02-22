@@ -2,8 +2,10 @@ package ext
 
 import (
 	"errors"
-	"github.com/miekg/dns"
+	"math"
 	"strconv"
+
+	"github.com/miekg/dns"
 )
 
 var (
@@ -13,9 +15,9 @@ var (
 )
 
 func ParseAnswerInLog(e *ADGHLogEntry) (int, error) {
-	if e.Result.IsFiltered {
+	if e.AdghResult.IsFiltered {
 		e.ParsedAnswer = []string{"filtered"}
-		e.ResultStr = e.Result.Reason.String()
+		e.AdghResultStr = e.AdghResult.Reason.String()
 		return 1, nil
 	}
 	dnsResp := dns.Msg{}
@@ -26,8 +28,13 @@ func ParseAnswerInLog(e *ADGHLogEntry) (int, error) {
 	if len(dnsResp.Answer) == 0 {
 		return 0, nil
 	}
+	e.ResponseCode = dnsResp.MsgHdr.Rcode
 	fDest := make([]string, len(dnsResp.Answer))
+	updatedTTL := math.MaxUint32
 	for i := 0; i < len(dnsResp.Answer); i++ {
+		if ttl := parseTTLFromResponse(dnsResp.Answer[i]); ttl < updatedTTL {
+			updatedTTL = ttl
+		}
 		switch t := dnsResp.Answer[i].(type) {
 		case *dns.A:
 			fDest[i] = t.A.String()
@@ -47,8 +54,13 @@ func ParseAnswerInLog(e *ADGHLogEntry) (int, error) {
 			return 0, ErrNoPredefinedParser
 		}
 	}
+	e.NearestTTL = updatedTTL
 	e.ParsedAnswer = fDest
 	return len(dnsResp.Answer), nil
+}
+
+func parseTTLFromResponse(rr dns.RR) int {
+	return int(rr.Header().Ttl)
 }
 
 func RemoveAnswerInLog(e *ADGHLogEntry) error {

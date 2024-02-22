@@ -66,9 +66,13 @@ type ADGHLogEntry struct {
 
 	IP net.IP `json:"IP"`
 
-	Result ADGHFilteringResult
+	AdghResult ADGHFilteringResult
 	// Customized Field
-	ResultStr string `json:",omitempty"`
+	AdghResultStr string `json:",omitempty"`
+	// Customized Field
+	NearestTTL int `json:",omitempty"`
+	// Customized Field
+	ResponseCode int `json:",omitempty"`
 
 	Elapsed time.Duration
 
