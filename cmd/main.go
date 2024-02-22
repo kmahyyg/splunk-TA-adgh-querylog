@@ -19,6 +19,10 @@ const (
 	SRC_DEF            = "SRC_LOG"
 )
 
+var (
+	VersionNum = "v0.0.0-unknown"
+)
+
 type PreProcessorConfig struct {
 	DestinationTcp string
 	SourceFile     string
@@ -28,12 +32,13 @@ func main() {
 	var err error
 	var dstConn *net.TCPConn
 	defer func() {
-		log.Println("Sleep 5 seconds for cleanup, then exit.")
-		time.Sleep(5 * time.Second)
+		log.Println("Sleep 3 seconds for cleanup, then exit.")
+		time.Sleep(3 * time.Second)
 	}()
 	// init
 	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC | log.Lmicroseconds)
 	log.Println("Start Initialization.")
+	log.Println("Version: ", VersionNum)
 	conf := &PreProcessorConfig{
 		DestinationTcp: os.Getenv(DEST_DEF),
 		SourceFile:     os.Getenv(SRC_DEF),
