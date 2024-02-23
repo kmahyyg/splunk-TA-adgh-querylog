@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rm -ri bin/*
+rm -ri bin/adgh_*
 
 export GOOS=linux
 export GOARCH=amd64
