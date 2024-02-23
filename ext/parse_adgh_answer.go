@@ -65,6 +65,9 @@ func parseTTLFromResponse(rr dns.RR) int {
 }
 
 func RemoveAnswerInLog(e *ADGHLogEntry) error {
+	if e.AdghResultStr != "" {
+		e.Result.Reason = 0
+	}
 	switch e.QType {
 	case "A":
 		fallthrough
