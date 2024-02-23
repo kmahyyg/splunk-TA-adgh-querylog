@@ -31,3 +31,12 @@ Download binary from release. Write environment variable according to above. Put
 ## License
 
 GNU AGPL v3
+
+## Assets
+
+Lookup Tables:
+
+https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml
+
+- RCODE: https://www.iana.org/assignments/dns-parameters/dns-parameters-6.csv
+- OpCode: https://www.iana.org/assignments/dns-parameters/dns-parameters-5.csv
