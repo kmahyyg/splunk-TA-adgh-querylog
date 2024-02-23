@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/adgh-querylog-preprocessor.iml" filepath="$PROJECT_DIR$/.idea/adgh-querylog-preprocessor.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/adgh-querylog-splunk-TA.iml" filepath="$PROJECT_DIR$/.idea/adgh-querylog-splunk-TA.iml" />
     </modules>
   </component>
 </project>
