@@ -62,7 +62,7 @@ type ADGHLogEntry struct {
 	OrigAnswer []byte `json:",omitempty"`
 
 	// Customized Field
-	ParsedAnswer []string `json:",omitempty"`
+	ParsedAnswer []string
 
 	IP net.IP `json:"IP"`
 
@@ -70,9 +70,9 @@ type ADGHLogEntry struct {
 	// Customized Field
 	AdghResultStr string `json:",omitempty"`
 	// Customized Field
-	NearestTTL int `json:",omitempty"`
+	NearestTTL int
 	// Customized Field
-	ResponseCode int `json:",omitempty"`
+	ResponseCode int
 
 	Elapsed time.Duration
 
