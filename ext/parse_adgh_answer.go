@@ -15,9 +15,9 @@ var (
 )
 
 func ParseAnswerInLog(e *ADGHLogEntry) (int, error) {
-	if e.AdghResult.IsFiltered {
+	if e.Result.IsFiltered {
 		e.ParsedAnswer = []string{"filtered"}
-		e.AdghResultStr = e.AdghResult.Reason.String()
+		e.AdghResultStr = e.Result.Reason.String()
 		return 1, nil
 	}
 	dnsResp := dns.Msg{}
@@ -26,7 +26,7 @@ func ParseAnswerInLog(e *ADGHLogEntry) (int, error) {
 		return -1, err
 	}
 	if len(dnsResp.Answer) == 0 {
-		return 0, nil
+		return 0, ErrNoAnswerInResp
 	}
 	e.ResponseCode = dnsResp.MsgHdr.Rcode
 	fDest := make([]string, len(dnsResp.Answer))

@@ -66,7 +66,7 @@ type ADGHLogEntry struct {
 
 	IP net.IP `json:"IP"`
 
-	AdghResult ADGHFilteringResult
+	Result ADGHFilteringResult
 	// Customized Field
 	AdghResultStr string `json:",omitempty"`
 	// Customized Field
