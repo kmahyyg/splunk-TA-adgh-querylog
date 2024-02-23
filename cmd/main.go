@@ -157,7 +157,7 @@ func main() {
 			if err != nil {
 				log.Println("Log Parser Error: ", err.Error())
 			}
-			if n >= 0 {
+			if n > 0 {
 				err = ext.RemoveAnswerInLog(log2Write)
 				if err != nil {
 					log.Println("Log Filter Error: ", err.Error())
