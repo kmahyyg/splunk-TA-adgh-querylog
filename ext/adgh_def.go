@@ -73,6 +73,8 @@ type ADGHLogEntry struct {
 	NearestTTL int
 	// Customized Field
 	ResponseCode int
+	// Customized Field
+	RequestOpCode int
 
 	Elapsed time.Duration
 

@@ -29,6 +29,7 @@ func ParseAnswerInLog(e *ADGHLogEntry) (int, error) {
 		return 0, ErrNoAnswerInResp
 	}
 	e.ResponseCode = dnsResp.MsgHdr.Rcode
+	e.RequestOpCode = dnsResp.MsgHdr.Opcode
 	fDest := make([]string, len(dnsResp.Answer))
 	updatedTTL := math.MaxUint32
 	for i := 0; i < len(dnsResp.Answer); i++ {
