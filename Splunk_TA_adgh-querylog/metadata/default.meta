@@ -1,0 +1,21 @@
+[]
+access = read : [ * ], write : [ admin ]
+export = system
+
+[eventtypes]
+export = system
+
+[nav/default]
+export = none
+
+[props]
+export = system
+
+[tags]
+export = system
+
+[transforms]
+export = system
+
+[visualizations]
+export = system
