@@ -8,11 +8,11 @@
 
 ## What will this app do?
 
-1. 
+1. Parse `Answer` field in log and map fields into CIM model (Network Resolution).
 
 ## Configuration
 
-
+1. Configure absolute path of `querylog.json`
 
 ## Installation
 
