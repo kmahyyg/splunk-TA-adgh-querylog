@@ -1,4 +1,4 @@
-# ADGuard Home Query Log Preprocessor
+# ADGuard Home Query Log Processor
 
 ## Background
 
@@ -12,7 +12,7 @@
 
 ## Configuration
 
-1. Configure absolute path of `querylog.json`
+No Configuration needed. Source with suffix `/data/querylog.json` will be automatically assigned to source type `adgh_queryjson`.
 
 ## Installation
 
